@@ -11,11 +11,11 @@ pygame.init()
 # Create the screen
 screen = pygame.display.set_mode((800, 600))
 
-# Adding background
+# Adding background image
 background = pygame.image.load("space_background.png")
 
 # Background sound
-mixer.music.load("background.wav")
+mixer.music.load("Reggae-instrumental-music-85-bpm.mp3")
 mixer.music.play(-1)
 
 # Title and Icon
@@ -29,13 +29,20 @@ playerX = 370
 playerY = 480
 playerX_change = 0
 
+# EnemyBoss
+enemyBossImg = pygame.image.load("enemy_boss.png").convert_alpha()
+enemyBossX   = 0
+enemyBossY   = 50
+enemyBossX_change = 5
+enemyBossY_change = 0
+
 # Enemy
 enemyImg = []
 enemyX = []
 enemyY = []
 enemyX_change = []
 enemyY_change = []
-num_of_enemies = 10
+num_of_enemies = 8
 
 for i in range(num_of_enemies):
     enemyImg.append(pygame.image.load("enemy.png").convert_alpha())
@@ -50,7 +57,7 @@ bulletImg = pygame.image.load("bullet.png").convert_alpha()
 bulletX = 0
 bulletY = 480
 bulletX_change = 0
-bulletY_change = 10
+bulletY_change = 12
 bullet_state = "ready" 
 
 # Score
@@ -67,6 +74,9 @@ def show_score(x, y):
 
 def player(x,y):
     screen.blit(playerImg, (x, y))
+
+def enemyBoss(x,y):
+    screen.blit(enemyBossImg, (x, y))
 
 def enemy(x,y,i):
     screen.blit(enemyImg[i], (x, y))
@@ -100,9 +110,9 @@ while running:
         # If keystroke is pressed, check if its left or right
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                playerX_change = -3
+                playerX_change = -4
             if event.key == pygame.K_RIGHT:
-                playerX_change = 3
+                playerX_change = 4
             if event.key == pygame.K_SPACE:
                 if bullet_state is "ready":
                     bullet_Sound = mixer.Sound("laser.wav")
@@ -123,7 +133,27 @@ while running:
     elif playerX >= 736:
         playerX = 736
 
-    # Enemy movement
+    # Enemy Boss movement
+    enemyBossX += enemyBossX_change
+
+    if enemyBossX <= 0:
+        enemyBossX_change = 5
+    elif enemyBossX >= 736:
+        enemyBossX_change = -5
+
+    # Collision EnemyBoss (shooting down enemy boss and get big score)
+    collisionEnemyBoss = isCollision(enemyBossX, enemyBossY, bulletX, bulletY)
+    if collisionEnemyBoss:
+        explosion_Sound = mixer.Sound("explosion.wav")
+        explosion_Sound.play()
+        bulletY  = 480
+        bullet_state = "ready"
+        score_value += 100
+        enemyBossX = 0
+
+    enemyBoss(enemyBossX, enemyBossY)
+
+    # Enemy movement (many enemies)
     for i in range(num_of_enemies):
         enemyX[i] += enemyX_change[i]
 
@@ -132,20 +162,21 @@ while running:
             game_over = font.render("GAME OVER", True, (255,255,255))
             screen.blit(game_over, (300, 400))
             # Removing enemys from screen after game over
+            enemyBossY = 2000
             for j in range(num_of_enemies):
                 enemyY[j] = 2000
             break
 
         if enemyX[i] <= 0:
-            enemyX_change[i] = 2
+            enemyX_change[i] = 3
             enemyY[i] += enemyY_change[i]
         elif enemyX[i] >= 736:
-            enemyX_change[i] = -2
+            enemyX_change[i] = -3
             enemyY[i] += enemyY_change[i]
 
-        # Collision
-        collision = isCollision(enemyX[i], enemyY[i], bulletX, bulletY)
-        if collision:
+        # Collision Enemy (shooting down enemies and get scores)
+        collisionEnemy = isCollision(enemyX[i], enemyY[i], bulletX, bulletY)
+        if collisionEnemy:
             explosion_Sound = mixer.Sound("explosion.wav")
             explosion_Sound.play()
             bulletY  = 480
